@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
-"""MiMo V2.5 TTS Provider — OpenAI-compatible chat completions format."""
+"""MiMo V2.5 TTS Provider — OpenAI-compatible chat completions format.
+
+Supported models:
+  - mimo-v2.5-tts          : Built-in voices, singing mode, style tags
+  - mimo-v2.5-tts-voicedesign : Voice design via text description
+  - mimo-v2.5-tts-voiceclone  : Voice cloning from audio samples
+  - mimo-v2-tts            : Legacy model
+"""
 
 from __future__ import annotations
 
@@ -13,20 +20,14 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 
+from ..core.constants import MIMO_EMOTION_STYLE_MAP, MIMO_MODELS
 from ..utils.audio import validate_audio_file
 
 
 logger = logging.getLogger(__name__)
 
-_MIMO_EMOTION_STYLE_MAP: Dict[str, str] = {
-    "happy": "用开心、活泼的语调，语速稍快，声音明亮有活力。",
-    "sad": "用低沉、忧伤的语调，语速较慢，声音略带哽咽。",
-    "angry": "用愤怒、激动的语调，语速偏快，声音有力且带怒意。",
-    "neutral": "用平静、自然的语调，语速适中。",
-}
-
-_MIMO_VOICED_MODEL = "mimo-v2.5-tts-voicedesign"
-_MIMO_CLONE_MODEL = "mimo-v2.5-tts-voiceclone"
+_VOICED_MODEL = "mimo-v2.5-tts-voicedesign"
+_CLONE_MODEL = "mimo-v2.5-tts-voiceclone"
 
 
 class MiMoTTS:
@@ -50,6 +51,11 @@ class MiMoTTS:
         speed: float = 1.0,
         voice_id: str = "",
         emotion: str = "neutral",
+        voice_description: str = "",
+        optimize_text_preview: bool = False,
+        clone_audio_path: str = "",
+        style_instruction: str = "",
+        singing_mode: bool = False,
         max_retries: int = 2,
         timeout: int = 30,
     ):
@@ -60,9 +66,15 @@ class MiMoTTS:
         self.speed = float(speed)
         self.voice_id = voice_id or "mimo_default"
         self.default_emotion = (emotion or "neutral").lower()
+        self.voice_description = (voice_description or "").strip()
+        self.optimize_text_preview = bool(optimize_text_preview)
+        self.clone_audio_path = (clone_audio_path or "").strip()
+        self.style_instruction = (style_instruction or "").strip()
+        self.singing_mode = bool(singing_mode)
         self.max_retries = max(0, int(max_retries))
         self.timeout = max(5, int(timeout))
         self._session: Optional[aiohttp.ClientSession] = None
+        self._clone_audio_cache: Optional[str] = None
 
     async def close(self) -> None:
         if self._session:
@@ -76,27 +88,67 @@ class MiMoTTS:
 
     @staticmethod
     def _emotion_to_style(emotion: str) -> str:
-        return _MIMO_EMOTION_STYLE_MAP.get(
+        return MIMO_EMOTION_STYLE_MAP.get(
             emotion.lower(),
-            _MIMO_EMOTION_STYLE_MAP["neutral"],
+            MIMO_EMOTION_STYLE_MAP["neutral"],
         )
+
+    def _resolve_user_content(self, emotion: str) -> str:
+        if self.model == _VOICED_MODEL:
+            return self.voice_description or "年轻女性，温柔甜美，语速适中。"
+        if self.style_instruction:
+            return self.style_instruction
+        style = self._emotion_to_style(emotion)
+        if abs(self.speed - 1.0) > 0.05:
+            speed_desc = "稍快" if self.speed > 1.0 else "稍慢"
+            style += f"语速{speed_desc}。"
+        return style
+
+    async def _load_clone_voice(self) -> Optional[str]:
+        if self._clone_audio_cache is not None:
+            return self._clone_audio_cache or None
+
+        if not self.clone_audio_path:
+            return None
+
+        path = Path(self.clone_audio_path)
+        if not path.is_absolute():
+            path = Path(__file__).parent.parent / path
+
+        if not path.exists() or not path.is_file():
+            logger.warning("MiMoTTS: clone audio file not found: %s", path)
+            return None
+
+        try:
+            data = await asyncio.to_thread(path.read_bytes)
+            if not data:
+                return None
+            suffix = path.suffix.lower()
+            mime = "audio/wav" if suffix == ".wav" else "audio/mpeg"
+            b64 = base64.b64encode(data).decode("ascii")
+            result = f"data:{mime};base64,{b64}"
+            self._clone_audio_cache = result
+            return result
+        except Exception as e:
+            logger.error("MiMoTTS: failed to load clone audio: %s", e)
+            return None
 
     def _build_payload(
         self,
         text: str,
         *,
         voice: str,
-        speed: float,
         emotion: str,
     ) -> Dict[str, Any]:
-        style_instruction = self._emotion_to_style(emotion)
-        if abs(speed - 1.0) > 0.05:
-            speed_desc = "稍快" if speed > 1.0 else "稍慢"
-            style_instruction += f"语速{speed_desc}。"
+        user_content = self._resolve_user_content(emotion)
+
+        assistant_content = text
+        if self.singing_mode and self.model != _VOICED_MODEL:
+            assistant_content = f"(唱歌){text}"
 
         messages = [
-            {"role": "user", "content": style_instruction},
-            {"role": "assistant", "content": text},
+            {"role": "user", "content": user_content},
+            {"role": "assistant", "content": assistant_content},
         ]
 
         payload: Dict[str, Any] = {
@@ -108,9 +160,10 @@ class MiMoTTS:
             "stream": False,
         }
 
-        if self.model == _MIMO_VOICED_MODEL:
-            pass
-        elif self.model == _MIMO_CLONE_MODEL:
+        if self.model == _VOICED_MODEL:
+            if self.optimize_text_preview:
+                payload["audio"]["optimize_text_preview"] = True
+        elif self.model == _CLONE_MODEL:
             if voice:
                 payload["audio"]["voice"] = voice
         else:
@@ -141,19 +194,24 @@ class MiMoTTS:
             logger.error("MiMoTTS: missing api key")
             return None
 
-        effective_speed = float(speed) if speed is not None else float(self.speed)
         effective_voice = voice or self.voice_id
         effective_emotion = (emotion or self.default_emotion or "neutral").lower()
+
+        if self.model == _CLONE_MODEL and self.clone_audio_path:
+            clone_voice = await self._load_clone_voice()
+            if clone_voice:
+                effective_voice = clone_voice
 
         cache_key = hashlib.sha256(
             json.dumps(
                 {
                     "text": text,
-                    "voice": effective_voice,
-                    "speed": effective_speed,
+                    "voice": effective_voice[:128],
                     "emotion": effective_emotion,
                     "model": self.model,
                     "fmt": self.format,
+                    "style": self.style_instruction,
+                    "singing": self.singing_mode,
                 },
                 ensure_ascii=False,
             ).encode("utf-8")
@@ -166,7 +224,6 @@ class MiMoTTS:
         payload = self._build_payload(
             text,
             voice=effective_voice,
-            speed=effective_speed,
             emotion=effective_emotion,
         )
 
@@ -212,7 +269,7 @@ class MiMoTTS:
                         logger.info(
                             "MiMoTTS: synth ok model=%s voice=%s emotion=%s size=%d",
                             self.model,
-                            effective_voice,
+                            effective_voice[:32] if len(effective_voice) > 32 else effective_voice,
                             effective_emotion,
                             len(raw),
                         )

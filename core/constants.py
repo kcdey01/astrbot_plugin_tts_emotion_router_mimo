@@ -57,7 +57,7 @@ EMOTION_PREFERENCE_MAP: Dict[str, str] = {
 # Audio constants
 AUDIO_CLEANUP_TTL_SECONDS: int = 2 * 3600
 AUDIO_MIN_VALID_SIZE: int = 100
-AUDIO_VALID_EXTENSIONS: List[str] = [".mp3", ".wav", ".opus", ".pcm"]
+AUDIO_VALID_EXTENSIONS: List[str] = [".mp3", ".wav", ".opus", ".pcm", ".pcm16"]
 
 # Runtime cleanup limits
 SESSION_CLEANUP_INTERVAL_SECONDS: int = 1800
@@ -87,20 +87,40 @@ DEFAULT_MIMO_MODEL: str = "mimo-v2.5-tts"
 DEFAULT_MIMO_VOICE_ID: str = "mimo_default"
 DEFAULT_MIMO_FORMAT: str = "wav"
 DEFAULT_MIMO_SAMPLE_RATE: int = 24000
+DEFAULT_MIMO_VOICE_DESCRIPTION: str = ""
+DEFAULT_MIMO_OPTIMIZE_TEXT_PREVIEW: bool = False
+DEFAULT_MIMO_CLONE_AUDIO_PATH: str = ""
+DEFAULT_MIMO_STYLE_INSTRUCTION: str = ""
+DEFAULT_MIMO_SINGING_MODE: bool = False
 MIMO_MODELS: Tuple[str, ...] = (
     "mimo-v2.5-tts",
     "mimo-v2.5-tts-voicedesign",
     "mimo-v2.5-tts-voiceclone",
+    "mimo-v2-tts",
 )
 MIMO_PRESET_VOICES: Tuple[str, ...] = (
     "mimo_default", "冰糖", "茉莉", "苏打", "白桦",
     "Mia", "Chloe", "Milo", "Dean",
 )
 MIMO_EMOTION_STYLE_MAP: Dict[str, str] = {
+    "neutral": "用平静、自然的语调，语速适中。",
     "happy": "用开心、活泼的语调，语速稍快，声音明亮有活力。",
     "sad": "用低沉、忧伤的语调，语速较慢，声音略带哽咽。",
     "angry": "用愤怒、激动的语调，语速偏快，声音有力且带怒意。",
-    "neutral": "用平静、自然的语调，语速适中。",
+    "fearful": "用紧张、害怕的语调，语速偏快，声音带有颤抖。",
+    "amazed": "用惊叹、不可思议的语调，声音充满惊奇感。",
+    "excited": "用激动、兴奋的语调，语速较快，声音高昂有活力。",
+    "gentle": "用温柔、轻声细语的语调，语速较慢，声音柔和。",
+    "cold": "用冷淡、疏离的语调，语速平稳，声音不带感情。",
+    "lively": "用活泼、跳跃的语调，语速较快，声音轻快。",
+    "serious": "用严肃、认真的语调，语速适中，声音沉稳有力。",
+    "lazy": "用慵懒、随意的语调，语速较慢，声音松弛。",
+    "playful": "用俏皮、调皮的语调，语速轻快，声音带有玩味。",
+    "magnetic": "用磁性、低沉的语调，语速适中，声音有吸引力。",
+    "mellow": "用醇厚、圆润的语调，语速适中，声音饱满。",
+    "clear": "用清亮、清澈的语调，语速适中，声音干净透亮。",
+    "sweet": "用甜美、可爱的语调，语速适中，声音软糯。",
+    "hoarse": "用沙哑、低沉的语调，语速较慢，声音略带沧桑。",
 }
 
 MINIMAX_EXPRESSIVE_MODELS: Tuple[str, ...] = ("speech-2.8-hd", "speech-2.8-turbo")

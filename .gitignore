@@ -8,13 +8,19 @@ debug_*.py
 data/
 *.db
 *.sqlite
-*.json
+config.json
+# _conf_schema.json should NOT be ignored - it's the config schema
+*.tmp
 
 # 临时文件
+temp/
 *.tmp
 *.temp
 *.log
 *.cache
+
+# Voices directory (generated voice data)
+voices/
 
 # Python 字节码
 __pycache__/
@@ -38,5 +44,3 @@ __pycache__/
 Thumbs.db
 mimo-integration-plan.md
 .kilo/plans/1779771434771-crisp-lagoon.md
-temp/8b9604ec1edb3535.wav
-temp/81c78c48952e710f.wav

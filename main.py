@@ -181,6 +181,11 @@ class TTSEmotionRouter(Star):
                 speed=api_cfg.get("speed", 1.0),
                 voice_id=api_cfg.get("voice_id", ""),
                 emotion=api_cfg.get("emotion", "neutral"),
+                voice_description=api_cfg.get("voice_description", ""),
+                optimize_text_preview=api_cfg.get("optimize_text_preview", False),
+                clone_audio_path=api_cfg.get("clone_audio_path", ""),
+                style_instruction=api_cfg.get("style_instruction", ""),
+                singing_mode=api_cfg.get("singing_mode", False),
                 max_retries=api_cfg.get("max_retries", 2),
                 timeout=api_cfg.get("timeout", 30),
             )
@@ -204,6 +209,8 @@ class TTSEmotionRouter(Star):
             "voice_id", "vol", "pitch", "emotion", "bitrate", "channel", "subtitle_enable",
             "output_format", "language_boost", "proxy", "voice_modify", "timber_weights",
             "pronunciation_dict", "aigc_watermark", "max_retries", "timeout",
+            "voice_description", "optimize_text_preview", "clone_audio_path",
+            "style_instruction", "singing_mode",
         )
         return tuple((k, str(api_cfg.get(k))) for k in keys)
 

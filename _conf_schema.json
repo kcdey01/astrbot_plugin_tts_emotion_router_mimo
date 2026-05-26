@@ -212,7 +212,7 @@
       },
       "mimo": {
         "type": "object",
-        "description": "小米 MiMo TTS 配置",
+        "description": "小米 MiMo V2.5 TTS 配置（详见 platform.xiaomimimo.com 文档）",
         "condition": {
           "provider": "mimo"
         },
@@ -229,28 +229,107 @@
           },
           "model": {
             "type": "string",
-            "description": "模型名",
+            "description": "模型 ID（内置音色 / 音色设计 / 音色克隆）",
             "options": [
               "mimo-v2.5-tts",
               "mimo-v2.5-tts-voicedesign",
-              "mimo-v2.5-tts-voiceclone"
+              "mimo-v2.5-tts-voiceclone",
+              "mimo-v2-tts"
             ],
             "default": "mimo-v2.5-tts"
           },
           "voice_id": {
             "type": "string",
-            "description": "默认音色 ID（预置: mimo_default/冰糖/茉莉/苏打/白桦/Mia/Chloe/Milo/Dean）",
-            "default": "mimo_default"
+            "description": "默认音色 ID（仅 mimo-v2.5-tts / mimo-v2-tts 模型生效）",
+            "options": [
+              "mimo_default",
+              "冰糖",
+              "茉莉",
+              "苏打",
+              "白桦",
+              "Mia",
+              "Chloe",
+              "Milo",
+              "Dean"
+            ],
+            "default": "mimo_default",
+            "condition": {
+              "model": ["mimo-v2.5-tts", "mimo-v2-tts"]
+            }
+          },
+          "voice_description": {
+            "type": "text",
+            "description": "音色描述（自然语言描述期望的声音特征，如「年轻女性，温柔甜美，语速稍慢」）",
+            "default": "",
+            "hint": "用于 voicedesign 模型，描述越具体效果越好。涵盖性别年龄、音色质感、情绪语调、语速节奏等维度。",
+            "condition": {
+              "model": "mimo-v2.5-tts-voicedesign"
+            }
+          },
+          "optimize_text_preview": {
+            "type": "bool",
+            "description": "智能润色播报文本（voicedesign 模型可选，启用后可省略 assistant 消息）",
+            "default": false,
+            "condition": {
+              "model": "mimo-v2.5-tts-voicedesign"
+            }
+          },
+          "clone_audio_path": {
+            "type": "string",
+            "description": "克隆参考音频文件路径（支持 mp3/wav，voiceclone 模型生效）",
+            "default": "",
+            "hint": "填写服务器上音频文件的绝对路径或相对于插件目录的路径。留空则使用 voice_id 字段手动填写 base64。",
+            "condition": {
+              "model": "mimo-v2.5-tts-voiceclone"
+            }
           },
           "speed": {
             "type": "float",
-            "description": "默认语速",
+            "description": "默认语速（通过自然语言指令控制，1.0 为正常）",
             "default": 1.0
           },
           "emotion": {
             "type": "string",
-            "description": "默认情绪",
+            "description": "默认情绪风格（映射为自然语言指令注入 user 消息）",
+            "options": [
+              "neutral",
+              "happy",
+              "sad",
+              "angry",
+              "fearful",
+              "amazed",
+              "excited",
+              "gentle",
+              "cold",
+              "lively",
+              "serious",
+              "lazy",
+              "playful",
+              "magnetic",
+              "mellow",
+              "clear",
+              "sweet",
+              "hoarse"
+            ],
             "default": "neutral"
+          },
+          "style_instruction": {
+            "type": "text",
+            "description": "自定义风格指令（填写后覆盖 emotion，直接作为 user 消息传递）",
+            "default": "",
+            "hint": "用自然语言描述期望的语音风格，例如「用开心活泼的语调，语速稍快，声音明亮有活力」。留空则由 emotion 自动生成。",
+            "condition": {
+              "model": ["mimo-v2.5-tts", "mimo-v2-tts", "mimo-v2.5-tts-voiceclone"]
+            }
+          },
+          "singing_mode": {
+            "type": "bool",
+            "description": "唱歌模式（在文本前添加 (唱歌) 标签）",
+            "default": false,
+            "hint": "仅 mimo-v2.5-tts 模型支持。开启后待合成文本前会自动添加 (唱歌) 标签。",
+            "condition": {
+              "model": "mimo-v2.5-tts"
+            }
           },
           "audio_format": {
             "type": "string",
@@ -258,13 +337,13 @@
             "options": [
               "wav",
               "mp3",
-              "pcm"
+              "pcm16"
             ],
             "default": "wav"
           },
           "sample_rate": {
             "type": "int",
-            "description": "采样率（MiMo 默认 24000）",
+            "description": "采样率（MiMo V2.5 固定 24000）",
             "default": 24000
           }
         }
