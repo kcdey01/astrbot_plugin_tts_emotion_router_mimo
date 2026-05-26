@@ -60,6 +60,7 @@ from .core.text_splitter import TextSplitter
 from .emotion.classifier import HeuristicClassifier
 from .tts.provider_siliconflow import SiliconFlowTTS
 from .tts.provider_minimax import MiniMaxTTS
+from .tts.provider_mimo import MiMoTTS
 from .utils.audio import ensure_dir, cleanup_dir
 from .utils.extract import CodeAndLinkExtractor
 from .utils.text_sanitizer import PreparedSpeechText, SpeechTextSanitizer
@@ -167,6 +168,19 @@ class TTSEmotionRouter(Star):
                 subtitle_enable=api_cfg.get("subtitle_enable", False),
                 pronunciation_dict=api_cfg.get("pronunciation_dict", {}),
                 aigc_watermark=api_cfg.get("aigc_watermark", False),
+                max_retries=api_cfg.get("max_retries", 2),
+                timeout=api_cfg.get("timeout", 30),
+            )
+
+        if provider == "mimo":
+            return MiMoTTS(
+                api_url=api_cfg["url"],
+                api_key=api_cfg["key"],
+                model=api_cfg["model"],
+                fmt=api_cfg.get("format", "wav"),
+                speed=api_cfg.get("speed", 1.0),
+                voice_id=api_cfg.get("voice_id", ""),
+                emotion=api_cfg.get("emotion", "neutral"),
                 max_retries=api_cfg.get("max_retries", 2),
                 timeout=api_cfg.get("timeout", 30),
             )

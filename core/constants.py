@@ -81,6 +81,28 @@ DEFAULT_MINIMAX_OUTPUT_FORMAT: str = "hex"
 DEFAULT_MINIMAX_LANGUAGE_BOOST: str = ""
 DEFAULT_MINIMAX_PROXY: str = ""
 
+# Defaults: MiMo
+DEFAULT_MIMO_URL: str = "https://api.xiaomimimo.com/v1"
+DEFAULT_MIMO_MODEL: str = "mimo-v2.5-tts"
+DEFAULT_MIMO_VOICE_ID: str = "mimo_default"
+DEFAULT_MIMO_FORMAT: str = "wav"
+DEFAULT_MIMO_SAMPLE_RATE: int = 24000
+MIMO_MODELS: Tuple[str, ...] = (
+    "mimo-v2.5-tts",
+    "mimo-v2.5-tts-voicedesign",
+    "mimo-v2.5-tts-voiceclone",
+)
+MIMO_PRESET_VOICES: Tuple[str, ...] = (
+    "mimo_default", "冰糖", "茉莉", "苏打", "白桦",
+    "Mia", "Chloe", "Milo", "Dean",
+)
+MIMO_EMOTION_STYLE_MAP: Dict[str, str] = {
+    "happy": "用开心、活泼的语调，语速稍快，声音明亮有活力。",
+    "sad": "用低沉、忧伤的语调，语速较慢，声音略带哽咽。",
+    "angry": "用愤怒、激动的语调，语速偏快，声音有力且带怒意。",
+    "neutral": "用平静、自然的语调，语速适中。",
+}
+
 MINIMAX_EXPRESSIVE_MODELS: Tuple[str, ...] = ("speech-2.8-hd", "speech-2.8-turbo")
 MINIMAX_EXPRESSIVE_TAGS: Tuple[str, ...] = (
     "laughs",

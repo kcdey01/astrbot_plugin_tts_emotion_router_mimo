@@ -14,7 +14,8 @@
         "description": "语音服务商",
         "options": [
           "siliconflow",
-          "minimax"
+          "minimax",
+          "mimo"
         ],
         "default": "siliconflow"
       },
@@ -206,6 +207,65 @@
             "type": "bool",
             "description": "是否返回字幕",
             "default": false
+          }
+        }
+      },
+      "mimo": {
+        "type": "object",
+        "description": "小米 MiMo TTS 配置",
+        "condition": {
+          "provider": "mimo"
+        },
+        "items": {
+          "url": {
+            "type": "string",
+            "description": "API 地址",
+            "default": "https://api.xiaomimimo.com/v1"
+          },
+          "key": {
+            "type": "string",
+            "description": "API Key（在 platform.xiaomimimo.com 获取）",
+            "default": ""
+          },
+          "model": {
+            "type": "string",
+            "description": "模型名",
+            "options": [
+              "mimo-v2.5-tts",
+              "mimo-v2.5-tts-voicedesign",
+              "mimo-v2.5-tts-voiceclone"
+            ],
+            "default": "mimo-v2.5-tts"
+          },
+          "voice_id": {
+            "type": "string",
+            "description": "默认音色 ID（预置: mimo_default/冰糖/茉莉/苏打/白桦/Mia/Chloe/Milo/Dean）",
+            "default": "mimo_default"
+          },
+          "speed": {
+            "type": "float",
+            "description": "默认语速",
+            "default": 1.0
+          },
+          "emotion": {
+            "type": "string",
+            "description": "默认情绪",
+            "default": "neutral"
+          },
+          "audio_format": {
+            "type": "string",
+            "description": "音频格式",
+            "options": [
+              "wav",
+              "mp3",
+              "pcm"
+            ],
+            "default": "wav"
+          },
+          "sample_rate": {
+            "type": "int",
+            "description": "采样率（MiMo 默认 24000）",
+            "default": 24000
           }
         }
       }

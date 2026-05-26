@@ -32,6 +32,11 @@ from .constants import (
     DEFAULT_MINIMAX_URL,
     DEFAULT_MINIMAX_VOICE_ID,
     DEFAULT_MINIMAX_VOL,
+    DEFAULT_MIMO_FORMAT,
+    DEFAULT_MIMO_MODEL,
+    DEFAULT_MIMO_SAMPLE_RATE,
+    DEFAULT_MIMO_URL,
+    DEFAULT_MIMO_VOICE_ID,
     DEFAULT_PROB,
     DEFAULT_PROBABILITY_OUTPUT_ENABLE,
     DEFAULT_SAMPLE_RATE_MP3_WAV,
@@ -248,6 +253,23 @@ class ConfigManager:
             if k not in mm:
                 mm[k] = v
         engine["minimax"] = mm
+
+        mi = engine.get("mimo", {}) or {}
+        mi_defaults = {
+            "url": DEFAULT_MIMO_URL,
+            "key": "",
+            "model": DEFAULT_MIMO_MODEL,
+            "voice_id": DEFAULT_MIMO_VOICE_ID,
+            "speed": DEFAULT_API_SPEED,
+            "emotion": "neutral",
+            "audio_format": DEFAULT_MIMO_FORMAT,
+            "sample_rate": DEFAULT_MIMO_SAMPLE_RATE,
+        }
+        for k, v in mi_defaults.items():
+            if k not in mi:
+                mi[k] = v
+        engine["mimo"] = mi
+
         self._config["tts_engine"] = engine
 
         # Emotion route
@@ -381,7 +403,7 @@ class ConfigManager:
     def get_tts_provider(self) -> str:
         engine = self.get("tts_engine", {}) or {}
         provider = str(engine.get("provider", DEFAULT_TTS_PROVIDER)).strip().lower()
-        return provider if provider in {"siliconflow", "minimax"} else DEFAULT_TTS_PROVIDER
+        return provider if provider in {"siliconflow", "minimax", "mimo"} else DEFAULT_TTS_PROVIDER
 
     def is_emotion_route_enabled(self) -> bool:
         return bool((self.get("emotion_route", {}) or {}).get("enable", True))
@@ -434,6 +456,29 @@ class ConfigManager:
                 "max_retries": max_retries,
                 "default_voice": str(mm.get("voice_id", DEFAULT_MINIMAX_VOICE_ID)),
                 "gain": 0.0,
+            }
+
+        if provider == "mimo":
+            mi = engine.get("mimo", {}) or {}
+            return {
+                "provider": "mimo",
+                "url": str(mi.get("url", DEFAULT_MIMO_URL)),
+                "key": str(mi.get("key", "")),
+                "model": str(mi.get("model", DEFAULT_MIMO_MODEL)),
+                "voice_id": str(mi.get("voice_id", DEFAULT_MIMO_VOICE_ID)),
+                "speed": _safe_float(mi.get("speed"), DEFAULT_API_SPEED),
+                "emotion": str(mi.get("emotion", "neutral")),
+                "format": str(mi.get("audio_format", DEFAULT_MIMO_FORMAT)).lower(),
+                "sample_rate": _safe_int(mi.get("sample_rate"), DEFAULT_MIMO_SAMPLE_RATE),
+                "timeout": timeout,
+                "max_retries": max_retries,
+                "default_voice": str(mi.get("voice_id", DEFAULT_MIMO_VOICE_ID)),
+                "gain": 0.0,
+                "vol": DEFAULT_MINIMAX_VOL,
+                "pitch": DEFAULT_MINIMAX_PITCH,
+                "bitrate": DEFAULT_MINIMAX_BITRATE,
+                "channel": DEFAULT_MINIMAX_CHANNEL,
+                "subtitle_enable": False,
             }
 
         sf = engine.get("siliconflow", {}) or {}
