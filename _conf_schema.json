@@ -240,7 +240,7 @@
           },
           "voice_id": {
             "type": "string",
-            "description": "默认音色 ID（仅 mimo-v2.5-tts / mimo-v2-tts 模型生效）",
+            "description": "默认音色 ID（mimo-v2.5-tts / mimo-v2-tts 生效）。v2.5：mimo_default/冰糖/茉莉/苏打/白桦/Mia/Chloe/Milo/Dean；v2：mimo_default/default_zh/default_en",
             "options": [
               "mimo_default",
               "冰糖",
@@ -250,12 +250,11 @@
               "Mia",
               "Chloe",
               "Milo",
-              "Dean"
+              "Dean",
+              "default_zh",
+              "default_en"
             ],
-            "default": "mimo_default",
-            "condition": {
-              "model": ["mimo-v2.5-tts", "mimo-v2-tts"]
-            }
+            "default": "mimo_default"
           },
           "voice_description": {
             "type": "text",

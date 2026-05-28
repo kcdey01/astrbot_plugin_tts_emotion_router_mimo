@@ -228,7 +228,11 @@ emotion_route:
 - `mimo-v2.5-tts-voiceclone` — 根据参考音频克隆音色
 - `mimo-v2-tts` — 旧版模型
 
-**内置音色**：`mimo_default`、`冰糖`、`茉莉`、`苏打`、`白桦`、`Mia`、`Chloe`、`Milo`、`Dean`
+**内置音色**：
+| 模型 | 可用音色 ID |
+|------|------------|
+| `mimo-v2.5-tts` | `mimo_default`、`冰糖`(中/女)、`茉莉`(中/女)、`苏打`(中/男)、`白桦`(中/男)、`Mia`(英/女)、`Chloe`(英/女)、`Milo`(英/男)、`Dean`(英/男) |
+| `mimo-v2-tts` | `mimo_default`、`default_zh`(中/女)、`default_en`(英/女) |
 
 ---
 

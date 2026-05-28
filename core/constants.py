@@ -102,6 +102,15 @@ MIMO_PRESET_VOICES: Tuple[str, ...] = (
     "mimo_default", "冰糖", "茉莉", "苏打", "白桦",
     "Mia", "Chloe", "Milo", "Dean",
 )
+
+MIMO_V2_5_TTS_VOICES: Tuple[str, ...] = (
+    "mimo_default", "冰糖", "茉莉", "苏打", "白桦",
+    "Mia", "Chloe", "Milo", "Dean",
+)
+
+MIMO_V2_TTS_VOICES: Tuple[str, ...] = (
+    "mimo_default", "default_zh", "default_en",
+)
 MIMO_EMOTION_STYLE_MAP: Dict[str, str] = {
     "neutral": "用平静、自然的语调，语速适中。",
     "happy": "用开心、活泼的语调，语速稍快，声音明亮有活力。",
