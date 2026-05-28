@@ -18,6 +18,8 @@ from .constants import (
     EMOTION_SYNONYMS,
     INVISIBLE_CHARS,
     DEFAULT_EMO_MARKER_TAG,
+    INLINE_AUDIO_TAG_RE,
+    INLINE_AUDIO_KEYWORDS,
 )
 
 
@@ -295,6 +297,99 @@ class EmotionMarkerProcessor:
             如果已存在标记返回 True
         """
         return (self.tag in system_prompt) or (self.tag in prompt)
+    
+    def has_inline_audio_tags(self, text: str) -> bool:
+        """
+        检查文本中是否包含行内音频标签。
+        
+        行内音频标签格式: (调侃) (低声｜情绪塌陷般平静) (模仿自信，提高音量)
+        
+        Args:
+            text: 待检查文本
+            
+        Returns:
+            是否包含行内音频标签
+        """
+        if not text:
+            return False
+        for match in INLINE_AUDIO_TAG_RE.finditer(text):
+            content = match.group(1).strip()
+            if self._is_inline_audio_tag(content):
+                return True
+        return False
+    
+    def strip_inline_audio_tags(self, text: str) -> Tuple[str, int]:
+        """
+        移除文本中的行内音频标签。
+        
+        只移除被识别为音频标签的括号内容，保留普通括号文本。
+        
+        Args:
+            text: 原始文本
+            
+        Returns:
+            (清理后的文本, 移除的标签数量)
+        """
+        if not text:
+            return text, 0
+        
+        count = 0
+        
+        def _replacer(match: re.Match) -> str:
+            nonlocal count
+            content = match.group(1).strip()
+            if self._is_inline_audio_tag(content):
+                count += 1
+                return ""
+            return match.group(0)
+        
+        cleaned = INLINE_AUDIO_TAG_RE.sub(_replacer, text)
+        # 清理因移除标签产生的多余空格
+        cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+        cleaned = re.sub(r"\n[ \t]+\n", "\n\n", cleaned)
+        return cleaned.strip(), count
+    
+    @staticmethod
+    def _is_inline_audio_tag(content: str) -> bool:
+        """
+        判断括号内容是否为行内音频标签（而非普通括号文本）。
+        
+        启发式规则：
+        - 包含已知音频关键词
+        - 包含 ｜ 分隔符（强指示）
+        - 短纯中文文本（无数字、无英文）
+        """
+        if not content:
+            return False
+        
+        # 包含全角竖线分隔符 -> 强指示为音频标签
+        if "｜" in content:
+            return True
+        
+        # 包含已知音频关键词
+        for kw in INLINE_AUDIO_KEYWORDS:
+            if kw in content:
+                return True
+        
+        # 短纯中文文本（>=2个中文字符，无数字无英文）-> 可能是音频标签
+        if len(content) <= 15:
+            chinese_chars = re.findall(r"[\u4e00-\u9fff]", content)
+            has_digit = bool(re.search(r"\d", content))
+            has_ascii_letter = bool(re.search(r"[a-zA-Z]", content))
+            if len(chinese_chars) >= 2 and not has_digit and not has_ascii_letter:
+                return True
+        
+        return False
+    
+    def build_mimo_inline_tag_instruction(self) -> str:
+        """
+        构建 MiMo 行内音频标签的 LLM 指令。
+        
+        Returns:
+            LLM 指令文本
+        """
+        from .constants import MIMO_INLINE_TAG_INSTRUCTION
+        return MIMO_INLINE_TAG_INSTRUCTION
     
     def update_config(self, tag: str, enabled: bool) -> None:
         """

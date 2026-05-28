@@ -68,24 +68,32 @@ class SpeechTextSanitizer:
         cleaned_text = self.marker_processor.strip_all_visible_markers(cleaned_text)
 
         meme_cleaned_text, meme_tags = self._strip_meme_tags(cleaned_text)
+
+        keep_mimo_inline = self._should_keep_mimo_inline_tags(provider)
+        has_inline_tags = self.marker_processor.has_inline_audio_tags(meme_cleaned_text)
+
         display_base, pause_tags = self._handle_pause_tags(meme_cleaned_text, keep=False)
         display_base, voice_tags = self._handle_voice_tags(display_base, keep=False)
+        if has_inline_tags:
+            display_base, _ = self.marker_processor.strip_inline_audio_tags(display_base)
 
         keep_minimax_controls = self._should_keep_minimax_controls(provider)
         keep_voice_tags = keep_minimax_controls and self._supports_expressive_tags(model)
         tts_base, _ = self._handle_pause_tags(meme_cleaned_text, keep=keep_minimax_controls)
         tts_base, _ = self._handle_voice_tags(tts_base, keep=keep_voice_tags)
+        if has_inline_tags and not keep_mimo_inline:
+            tts_base, _ = self.marker_processor.strip_inline_audio_tags(tts_base)
 
         display_processed = self.extractor.process_text(display_base)
         tts_processed = self.extractor.process_text(
             tts_base,
-            preserve_linebreaks=keep_minimax_controls,
+            preserve_linebreaks=keep_minimax_controls or keep_mimo_inline,
         )
 
         display_text = self._cleanup_visible_text(display_processed.clean_text, keep_newlines=True)
         tts_text = self._cleanup_visible_text(
             tts_processed.speak_text,
-            keep_newlines=keep_minimax_controls,
+            keep_newlines=keep_minimax_controls or keep_mimo_inline,
         )
 
         matched_tags = {
@@ -93,6 +101,8 @@ class SpeechTextSanitizer:
             "pause": pause_tags,
             "minimax_voice": voice_tags,
         }
+        if has_inline_tags:
+            matched_tags["mimo_inline"] = ["detected"]
         matched_tags = {key: value for key, value in matched_tags.items() if value}
 
         return PreparedSpeechText(
@@ -107,6 +117,9 @@ class SpeechTextSanitizer:
 
     def _should_keep_minimax_controls(self, provider: str) -> bool:
         return str(provider or "").strip().lower() == "minimax"
+
+    def _should_keep_mimo_inline_tags(self, provider: str) -> bool:
+        return str(provider or "").strip().lower() == "mimo"
 
     def _supports_expressive_tags(self, model: str) -> bool:
         return str(model or "").strip().lower() in MINIMAX_EXPRESSIVE_MODELS

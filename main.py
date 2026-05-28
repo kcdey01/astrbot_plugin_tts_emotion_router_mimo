@@ -632,6 +632,9 @@ class TTSEmotionRouter(Star):
     def _is_minimax_provider(self) -> bool:
         return self.config.get_tts_provider() == "minimax"
 
+    def _is_mimo_provider(self) -> bool:
+        return self.config.get_tts_provider() == "mimo"
+
     def _current_tts_model(self) -> str:
         api_cfg = self.config.get_api_config()
         return str(api_cfg.get("model", "") or "").strip().lower()
@@ -661,6 +664,12 @@ class TTSEmotionRouter(Star):
 
     def _should_inject_minimax_prompt(self, event: AstrMessageEvent) -> bool:
         if not self._is_minimax_provider():
+            return False
+        umo = self._get_umo(event)
+        return self.config.is_voice_output_enabled_for_umo(umo)
+
+    def _should_inject_mimo_inline_tags(self, event: AstrMessageEvent) -> bool:
+        if not self._is_mimo_provider():
             return False
         umo = self._get_umo(event)
         return self.config.is_voice_output_enabled_for_umo(umo)
@@ -777,14 +786,20 @@ class TTSEmotionRouter(Star):
         try:
             await self._inject_recent_spoken_assistant_context(event, request)
             marker_mode = self.publish_output_marker_mode(event)
-            if not self._should_inject_minimax_prompt(event):
+
+            should_inject_minimax = self._should_inject_minimax_prompt(event)
+            should_inject_mimo = self._should_inject_mimo_inline_tags(event)
+
+            if not should_inject_minimax and not should_inject_mimo:
                 return
 
             sp = getattr(request, "system_prompt", "") or ""
             pp = getattr(request, "prompt", "") or ""
             injected_parts: List[str] = []
 
-            if (
+            if should_inject_mimo:
+                injected_parts.append(self.marker_processor.build_mimo_inline_tag_instruction())
+            elif (
                 marker_mode == OUTPUT_MARKER_MODE_PRESERVE
                 and self.emo_marker_enable
                 and not self.marker_processor.is_marker_present(sp, pp)
@@ -794,7 +809,9 @@ class TTSEmotionRouter(Star):
                     injected_parts.append(prompt_hint)
                 injected_parts.append(self.marker_processor.build_injection_instruction())
 
-            injected_parts.append(self._build_minimax_guidance_instruction())
+            if should_inject_minimax:
+                injected_parts.append(self._build_minimax_guidance_instruction())
+
             request.system_prompt = "\n".join(part for part in [*injected_parts, sp] if part).strip()
         except Exception as e:
             logger.error("on_llm_request failed: %s", e)

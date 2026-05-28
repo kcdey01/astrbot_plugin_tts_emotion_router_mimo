@@ -182,3 +182,52 @@ MAX_PROB: float = 1.0
 # Misc
 DEFAULT_TEST_TEXT: str = "这是一条 TTS 测试语音。"
 HISTORY_WRITE_DELAY: float = 0.8
+
+# Inline audio tags for MiMo native passthrough
+# Pattern matches: (tag) or (tag1｜tag2) or (tag1，tag2) at line start
+# Uses Chinese/English parentheses, supports fullwidth pipe ｜ as multi-tag separator
+INLINE_AUDIO_TAG_RE: Pattern = re.compile(
+    r"[\(（]"
+    r"([^)）\n]{1,60})"
+    r"[\)）]"
+)
+
+# Known inline emotion/style keywords for heuristic detection
+INLINE_AUDIO_KEYWORDS: Set[str] = {
+    "开心", "悲伤", "愤怒", "恐惧", "惊讶", "平静",
+    "调侃", "自信", "轻笑", "呼喊", "急促", "爆发",
+    "低声", "停顿", "释然", "温柔", "无奈", "崩溃",
+    "邪恶", "尴尬", "思考", "恳求", "不满",
+    "模仿", "声音变轻", "声音变大", "提高音量", "降低音量",
+    "放慢", "加快", "突然", "渐渐", "压低",
+    "happy", "sad", "angry", "fear", "surprise", "calm",
+    "whisper", "shout", "urgent", "burst", "pause",
+    "confident", "teasing", "relieved", "gentle",
+}
+
+# LLM prompt instruction for inline audio tags (MiMo mode)
+MIMO_INLINE_TAG_INSTRUCTION = (
+    "你可以在回复中使用行内音频标签来控制语音的情绪和风格。\n"
+    "标签用中文圆括号包裹，放在对应文本段落的前面。\n\n"
+    "格式规则：\n"
+    "- 单标签：(情绪) 如 (开心) (愤怒) (低声)\n"
+    "- 多标签叠加（用｜分隔）：(低声｜情绪塌陷般平静) (急促｜呼喊)\n"
+    "- 自然语言描述：(模仿自信，提高音量) (突然停顿) (声音变轻)\n"
+    "- 中英双语均可\n\n"
+    "可用情绪标签：开心、悲伤、愤怒、恐惧、惊讶、平静、调侃、自信、轻笑、呼喊、急促、爆发、低声、停顿、释然、温柔、无奈\n\n"
+    "示例：\n"
+    "(调侃) 老张你当时不是说这条航线稳得很吗……\n"
+    "(模仿自信，提高音量) \"系统全绿，放心走。\"\n"
+    "(突然停顿) ……现在呢？\n"
+    "(爆发，愤怒压不住) 现在整艘船都在报警！你管这叫\"放心\"？！\n"
+    "(声音变轻) 不过……你看那外面，裂开的星云像在呼吸一样。\n"
+    "(急促｜呼喊) 别断通讯！喂！再撑十秒！十秒！！\n"
+    "(低声｜情绪塌陷般平静) ……算了。\n"
+    "(轻笑｜带点释然) 也挺好，至少是一起看的。\n\n"
+    "注意：\n"
+    "- 只在需要改变情绪/风格时添加标签，普通文本不需要标签\n"
+    "- 标签应紧跟其控制的文本，放在文本前面\n"
+    "- 多标签叠加时用 ｜（全角竖线）分隔\n"
+    "- 标签内的描述尽量简洁生动\n"
+    "- 这些标签只服务语音效果，不要对用户解释标签含义"
+)
